@@ -17,7 +17,7 @@ from skimage.transform import rescale
 
 
 
-class SLMDoublePixel(object):
+class SLMSuperPixel(object):
     """
     A class that can create holograms when using an ideal phase-only SLM
     

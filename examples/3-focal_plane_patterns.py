@@ -13,7 +13,7 @@ import sys
 
 sys.path.append('..')
 
-from SLM_double_pixel_holography import SLMDoublePixel
+from slm_super_pixel_holography import SLMSuperPixel
 
 
 
@@ -32,7 +32,7 @@ pix_per_super = 2
 less_than_2pi = False
 
 # The initializer function for the patterns
-test_slm = SLMDoublePixel(x_pixels, 
+test_slm = SLMSuperPixel(x_pixels, 
                           y_pixels, 
                           x_dim, 
                           y_dim, 
