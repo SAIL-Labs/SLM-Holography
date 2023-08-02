@@ -94,7 +94,7 @@ class SLMSuperPixel(object):
     
     """
     
-    def __init__(self, x_pixels, y_pixels, x_dim, y_dim, wavelength, e_diam_pixels, focal_length = 1 * u.mm, max_phase_shift = 4*np.pi, only_in_e_diam = True, pix_per_super = 2, less_than_2pi = False):
+    def __init__(self, x_pixels, y_pixels, x_dim, y_dim, wavelength, e_diam_pixels = None, focal_length = 1 * u.mm, max_phase_shift = 4*np.pi, only_in_e_diam = True, pix_per_super = 2, less_than_2pi = False):
         """
         
 
@@ -180,6 +180,9 @@ class SLMSuperPixel(object):
         self.SLM_ampl = np.ones([self.pixels_y, self.pixels_x])
         self.SLM_phase = np.zeros([self.pixels_y, self.pixels_x])
     
+    def get_array_dimensions(self):
+        
+        return self.pixels_x, self.pixels_y
     
     def add_padding(self, ampl_padding = 0, phase_padding = 0, verbose = False):
         """
