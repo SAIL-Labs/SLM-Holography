@@ -16,16 +16,16 @@ With an object created, the values of the amplitude and phase arrays can be set 
 
 #### [Example 1](1-flat_ampl_and_phase.py)
 
-These functions apply a flat phase and amplitude to the SLM.
+This example applies a flat phase and amplitude to the SLM.
 This also shows and explains all of the variables when creating the class.
 
 #### [Example 2](2-gaussian_ampl.py)
 
-This function applies a gaussian to the amplitude only.
+This example applies a gaussian to the amplitude only.
 
 #### [Example 3](3-focal_plane_patterns.py)
 
-This function creates a circular array and then requests it in the focal plane.  This array is requested with a certain pixel scale and total intensity.
+This example creates a circular array and then requests it in the focal plane.  This array is requested with a certain pixel scale and total intensity.
 
 ## API Reference
 
