@@ -806,7 +806,7 @@ class SLMSuperPixel(object):
         if isinstance(el, int): el = [el]
         if isinstance(m, int): m = [m]
         if isinstance(make_odd, bool): make_odd = [make_odd]
-        if isinstance(intensity_list, list) == False: make_odd = [make_odd]
+        if isinstance(intensity_list, list) == False: intensity_list = [intensity_list]
         
         if len(el) == len(m) == len(make_odd):
             pass
