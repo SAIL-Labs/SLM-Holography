@@ -774,7 +774,7 @@ class SLMSuperPixel(object):
         self.SLM_phase[array_indices == False] = phaseoffset_min
     
     
-    def LP_mode_encoding(self, N_modes, el, m, intensity_list, n_core, n_cladding, *args, make_odd = False, oversample = 3, oversize = 1, set_intensity = True):
+    def LP_mode_encoding(self, N_modes, el, m, intensity_list, n_core, n_cladding, *args, make_odd = False, oversize = 3, oversample = 1, set_intensity = False):
         """
         A method to encode specific LP modes into the PSF assuming a lens with focal length focal_length.
 
@@ -813,25 +813,23 @@ class SLMSuperPixel(object):
         else:
             raise Exception("The el, m, and make_odd lists are not the same length")
         
-        ovsp = oversample
-        
         V = np.sqrt(2 * N_modes)
         self.a = (self.wavelength * V) / (2 * np.pi * ofiber.numerical_aperture(n_core, n_cladding)) 
         
-        self.Amplitude = np.zeros((int(oversize*ovsp*self.pixels_y),int(oversize*ovsp*self.pixels_x)))
-        self.Phase = np.zeros((int(oversize*ovsp*self.pixels_y),int(oversize*ovsp*self.pixels_x)))
+        self.lp_amplitude = np.zeros((int(oversample*oversize*self.pixels_y),int(oversample*oversize*self.pixels_x)))
+        self.lp_phase = np.zeros((int(oversample*oversize*self.pixels_y),int(oversample*oversize*self.pixels_x)))
 
-        center_x = (oversize*ovsp*self.pixels_x - 1)/2
-        center_y = (oversize*ovsp*self.pixels_y - 1)/2
+        center_x = (oversample*oversize*self.pixels_x - 1)/2
+        center_y = (oversample*oversize*self.pixels_y - 1)/2
         
-        x_linspace = np.linspace(0, int(oversize*ovsp*self.pixels_x), int(oversize*ovsp*self.pixels_x), endpoint=False)
-        y_linspace = np.linspace(0, int(oversize*ovsp*self.pixels_y), int(oversize*ovsp*self.pixels_y), endpoint=False)
+        x_linspace = np.linspace(0, int(oversample*oversize*self.pixels_x), int(oversample*oversize*self.pixels_x), endpoint=False)
+        y_linspace = np.linspace(0, int(oversample*oversize*self.pixels_y), int(oversample*oversize*self.pixels_y), endpoint=False)
         
         xx, yy = np.meshgrid(x_linspace, y_linspace)
         
-        x_scale = (xx - center_x) * self.focal_length * np.tan(self.wavelength/(self.x_dim * 10 * ovsp))
+        x_scale = (xx - center_x) * self.focal_length * np.tan(self.wavelength/(self.x_dim * 10 * oversize))
         
-        y_scale = (yy - center_y) * self.focal_length * np.tan(self.wavelength/(self.y_dim * 10 * ovsp))
+        y_scale = (yy - center_y) * self.focal_length * np.tan(self.wavelength/(self.y_dim * 10 * oversize))
         
         r = np.sqrt(x_scale**2 + y_scale**2)
         phi = np.arctan2(y_scale, x_scale)
@@ -844,19 +842,19 @@ class SLMSuperPixel(object):
             
             b = ofiber.LP_mode_value(V, el[i], m[i])
             
-            if make_odd: important_bits += intensity_list[i] * ofiber.LP_radial_field(V, b, el[i], r_over_a) * np.sin(el * phi)
-            else: important_bits += intensity_list[i] * ofiber.LP_radial_field(V, b, el[i], r_over_a) * np.cos(el * phi)        
+            if make_odd: important_bits += intensity_list[i] * ofiber.LP_radial_field(V, b, el[i], r_over_a) * np.sin(el[i] * phi)
+            else: important_bits += intensity_list[i] * ofiber.LP_radial_field(V, b, el[i], r_over_a) * np.cos(el[i] * phi)        
         
-        self.Amplitude = np.abs(important_bits)
+        self.lp_amplitude = np.abs(important_bits)
         
-        self.Phase[important_bits >= 0] = np.pi
+        self.lp_phase[important_bits >= 0] = np.pi
           
-        self.Amplitude /= np.sqrt(np.sum(self.Amplitude**2))
+        #self.lp_amplitude /= np.sqrt(np.sum(self.Amplitude**2))
 
-        self.fourier_encode = self.Amplitude * np.exp(1j * self.Phase)
+        self.fourier_encode = self.lp_amplitude * np.exp(1j * self.lp_phase)
         
-        pixscale_x = self.wavelength/(self.x_dim * 10 * ovsp) * u.rad
-        pixscale_y = self.wavelength/(self.y_dim * 10 * ovsp) * u.rad
+        pixscale_x = self.wavelength/(self.x_dim * 10 * oversize) * u.rad
+        pixscale_y = self.wavelength/(self.y_dim * 10 * oversize) * u.rad
         
         self.focal_plane_image(self.fourier_encode, pixscale_x, pixscale_y, *args, set_intensity = set_intensity)
         
