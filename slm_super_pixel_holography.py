@@ -647,7 +647,7 @@ class SLMSuperPixel(object):
         """
         self.SLM_phase += np.full((self.pixels_y, self.pixels_x), n)
         
-    def focal_plane_image(self, focal_array, PSF_pixscale_x, PSF_pixscale_y, *args, max_or_set_intensity = False):
+    def focal_plane_image(self, focal_array, PSF_pixscale_x, PSF_pixscale_y, *args, set_intensity = False):
         """
         A method to encode a certain Focal array into the SLM_ampl and SLM_phase
 
@@ -717,7 +717,7 @@ class SLMSuperPixel(object):
         total_intensity = transform[0,0]
         transformRolled = np.fft.fftshift(transform)
         
-        if max_or_set_intensity:
+        if set_intensity:
             intensity_scale =  args[0] / total_intensity
             if intensity_scale >= 1:
                 raise Exception("The total intensity requested is greater than the total intensity present in the focal plane")
@@ -774,7 +774,7 @@ class SLMSuperPixel(object):
         self.SLM_phase[array_indices == False] = phaseoffset_min
     
     
-    def LP_mode_encoding(self, N_modes, el, m, n_core, n_cladding, make_odd = False, oversample = 3, oversize = 1):
+    def LP_mode_encoding(self, N_modes, el, m, intensity_list, n_core, n_cladding, *args, make_odd = False, oversample = 3, oversize = 1, set_intensity = True):
         """
         A method to encode specific LP modes into the PSF assuming a lens with focal length focal_length.
 
@@ -782,15 +782,17 @@ class SLMSuperPixel(object):
         ----------
         N_modes : int
             The number of modes in the input MMF at the specified wavelength.
-        el : int
+        el : {M} list, ints
             The l number of the LP mode to be encoded, starting at 0.
-        m : int
-            THe m number of the LP mode to be encoded, starting at 1.
+        m : {M} list, ints
+            The m number of the LP mode to be encoded, starting at 1.
+        intenisty_list: {M} list, floats
+            The intenisty to scale the LP modes with.
         n_core : float
             The refractive index of the core of the MMF.
         n_cladding : float
             The refractive index of the cladding of the MMF.
-        make_odd : bool, optional
+        make_odd : {M} list, bool, optional
             Find the odd or even version of the specific LP mode (False is even, True is odd). The default is False.
         oversample : float, optional
             A scaling factor for the number of pixels to use when creating the LP modes. The default is 1.
@@ -801,12 +803,20 @@ class SLMSuperPixel(object):
 
         """
         
+        if isinstance(el, int): el = [el]
+        if isinstance(m, int): m = [m]
+        if isinstance(make_odd, bool): make_odd = [make_odd]
+        if isinstance(intensity_list, list) == False: make_odd = [make_odd]
+        
+        if len(el) == len(m) == len(make_odd):
+            pass
+        else:
+            raise Exception("The el, m, and make_odd lists are not the same length")
+        
         ovsp = oversample
         
         V = np.sqrt(2 * N_modes)
         self.a = (self.wavelength * V) / (2 * np.pi * ofiber.numerical_aperture(n_core, n_cladding)) 
-        b = ofiber.LP_mode_value(V, el, m)
-        
         
         self.Amplitude = np.zeros((int(oversize*ovsp*self.pixels_y),int(oversize*ovsp*self.pixels_x)))
         self.Phase = np.zeros((int(oversize*ovsp*self.pixels_y),int(oversize*ovsp*self.pixels_x)))
@@ -827,9 +837,15 @@ class SLMSuperPixel(object):
         phi = np.arctan2(y_scale, x_scale)
         
         r_over_a = r/self.a
-
-        if make_odd: important_bits = ofiber.LP_radial_field(V, b, el, r_over_a) * np.sin(el * phi)
-        else: important_bits = ofiber.LP_radial_field(V, b, el, r_over_a) * np.cos(el * phi)
+        
+        important_bits = np.zeros(phi.shape)
+        
+        for i in range(len(el)):
+            
+            b = ofiber.LP_mode_value(V, el[i], m[i])
+            
+            if make_odd: important_bits += intensity_list[i] * ofiber.LP_radial_field(V, b, el[i], r_over_a) * np.sin(el * phi)
+            else: important_bits += intensity_list[i] * ofiber.LP_radial_field(V, b, el[i], r_over_a) * np.cos(el * phi)        
         
         self.Amplitude = np.abs(important_bits)
         
@@ -842,7 +858,7 @@ class SLMSuperPixel(object):
         pixscale_x = self.wavelength/(self.x_dim * 10 * ovsp) * u.rad
         pixscale_y = self.wavelength/(self.y_dim * 10 * ovsp) * u.rad
         
-        self.focal_plane_image(self.fourier_encode, pixscale_x, pixscale_y)
+        self.focal_plane_image(self.fourier_encode, pixscale_x, pixscale_y, *args, set_intensity = set_intensity)
         
     def focal_spot(self, central_spot_power, left_spot_power, right_spot_power, spacing, rotation):
         
