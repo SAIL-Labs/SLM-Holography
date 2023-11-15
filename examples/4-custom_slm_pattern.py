@@ -45,7 +45,7 @@ test_slm = SLMSuperPixel(x_pixels,
                           less_than_2pi)
 
 
-# creates a pattern to apply to the image plane or focal plane
+# creates a pattern to apply to the pupil plane
 # this example is a filled in circle with phase ramp as the radius increases
 
 dimensions = test_slm.get_array_dimensions()
@@ -53,11 +53,22 @@ dimensions = test_slm.get_array_dimensions()
 Y, X = np.mgrid[-dimensions[0]//2:(dimensions[0]//2), -dimensions[1]//2:(dimensions[1]//2)]
 R = np.sqrt(Y**2 + X**2)
 
-focal_array = np.zeros(dimensions, dtype = 'complex')
-focal_array[R < 50] = 0.5 * np.exp(1j * R[R < 50])
+pupil_array = np.zeros(dimensions, dtype = 'complex')
+pupil_array[R < 50] = 0.5 * np.exp(1j * R[R < 50])
 
+plt.subplots(1,2)
+plt.suptitle('Focal Array to encode into the SLM')
+plt.subplot(121)
+plt.title('Phase')
+plt.imshow(np.angle(pupil_array), cmap='viridis')
+plt.colorbar(fraction = 0.05)
+plt.subplot(122)
+plt.title('Amplitde')
+plt.imshow(np.abs(pupil_array), cmap='viridis')
+plt.colorbar(fraction = 0.05)
+plt.show()
 
-test_slm.custom_complex(focal_array)
+test_slm.custom_complex(pupil_array)
 
 # converts the pattern to the SLM using the double pixel method and returns an array that is in radians
 # if the pattern is only encoded in the entrance pupil, if add_padding is true the array is padded to be the size of the SLM
@@ -71,19 +82,19 @@ slm_final_array = test_slm.double_pixel_convert(add_padding,
                                                 phase_padding = padding_phase)
 
 
-plt.figure(1)
+plt.figure(2)
 plt.title('SLM Pattern')
 plt.imshow(slm_final_array, cmap='viridis')
 plt.colorbar()
 plt.show()
 
-plt.figure(2)
+plt.figure(3)
 plt.title('SLM Amplitude Array')
 plt.imshow(test_slm.SLM_ampl, cmap='inferno')
 plt.colorbar()
 plt.show()
 
-plt.figure(3)
+plt.figure(4)
 plt.title('SLM Phase Array')
 plt.imshow(test_slm.SLM_phase, cmap='plasma')
 plt.colorbar()

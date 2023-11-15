@@ -13,7 +13,7 @@ import sys
 
 sys.path.append('..')
 
-from SLM_double_pixel_holography import SLMSuperPixel
+from slm_super_pixel_holography import SLMSuperPixel
 
 
 

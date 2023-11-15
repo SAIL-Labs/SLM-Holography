@@ -647,7 +647,7 @@ class SLMSuperPixel(object):
         """
         self.SLM_phase += np.full((self.pixels_y, self.pixels_x), n)
         
-    def focal_plane_image(self, focal_array, PSF_pixscale_x, PSF_pixscale_y, *args, set_intensity = False):
+    def focal_plane_image(self, focal_array, PSF_pixscale_x, PSF_pixscale_y, *args, set_amplitude = False):
         """
         A method to encode a certain Focal array into the SLM_ampl and SLM_phase
 
@@ -714,15 +714,15 @@ class SLMSuperPixel(object):
         
         focal_array_rolled = np.fft.fftshift(focal_array)
         transform = fft.fft2(focal_array_rolled)
-        total_intensity = transform[0,0]
+        total_amplitude = transform[0,0]
         transformRolled = np.fft.fftshift(transform)
         
-        if set_intensity:
-            intensity_scale =  args[0] / total_intensity
-            if intensity_scale >= 1:
+        if set_amplitude:
+            amplitude_scale =  args[0] / total_amplitude
+            if amplitude_scale >= 1:
                 raise Exception("The total intensity requested is greater than the total intensity present in the focal plane")
         else:
-            intensity_scale = 1
+            amplitude_scale = 1
         
         resized_transform_real = rescale(transformRolled.real, (y_SLM_scale, x_SLM_scale))
         resized_transform_imag = rescale(transformRolled.imag, (y_SLM_scale, x_SLM_scale))
@@ -746,7 +746,7 @@ class SLMSuperPixel(object):
         transformedAmplMax = self.transformAmpl.max()
         transformedAmplMin = self.transformAmpl.min()
         
-        ScaledTransformedAmpl = intensity_scale * (self.transformAmpl - transformedAmplMin) / (transformedAmplMax - transformedAmplMin)
+        ScaledTransformedAmpl = amplitude_scale * (self.transformAmpl - transformedAmplMin) / (transformedAmplMax - transformedAmplMin)
 
         
         self.transformPhase += 1 * np.pi
@@ -756,7 +756,23 @@ class SLMSuperPixel(object):
         self.SLM_phase = self.transformPhase
     
     def checkerboard_phase_only(self, num_pixels_merged, phaseoffset_max, phaseoffset_min = 0):
+        """
+        Creates a checkerboard pattern using the super pixels.
         
+        Parameters
+        ----------
+        num_pixels_merged: int
+            The number of super pixels to merge to form the individual pixels of the checkerboard.
+            The dimension in SLM pixels would be pix_per_super * num_pixels_merged
+        phaseoffset_max: float, in radians
+            The high phase value for half of the pixels
+        phaseoffset_min: float, in radians (default is 0)
+            The low phase value for the other half of the pixels
+        
+        Returns
+        -------
+        None.
+        """
         self.flat_phase(0)
         
         base_array = np.array([[True,False], [False,True]], dtype = 'bool')
@@ -774,7 +790,7 @@ class SLMSuperPixel(object):
         self.SLM_phase[array_indices == False] = phaseoffset_min
     
     
-    def LP_mode_encoding(self, N_modes, el, m, intensity_list, n_core, n_cladding, *args, make_odd = False, oversize = 3, oversample = 1, set_intensity = False):
+    def LP_mode_encoding(self, N_modes, el, m, amplitude_list, n_core, n_cladding, *args, make_odd = False, oversize = 3, oversample = 1, set_amplitude = False):
         """
         A method to encode specific LP modes into the PSF assuming a lens with focal length focal_length.
 
@@ -806,7 +822,7 @@ class SLMSuperPixel(object):
         if isinstance(el, int): el = [el]
         if isinstance(m, int): m = [m]
         if isinstance(make_odd, bool): make_odd = [make_odd]
-        if isinstance(intensity_list, list) == False: intensity_list = [intensity_list]
+        if isinstance(amplitude_list, list) == False: amplitude_list = [amplitude_list]
         
         if len(el) == len(m) == len(make_odd):
             pass
@@ -842,8 +858,8 @@ class SLMSuperPixel(object):
             
             b = ofiber.LP_mode_value(V, el[i], m[i])
             
-            if make_odd: important_bits += intensity_list[i] * ofiber.LP_radial_field(V, b, el[i], r_over_a) * np.sin(el[i] * phi)
-            else: important_bits += intensity_list[i] * ofiber.LP_radial_field(V, b, el[i], r_over_a) * np.cos(el[i] * phi)        
+            if make_odd: important_bits += amplitude_list[i] * ofiber.LP_radial_field(V, b, el[i], r_over_a) * np.sin(el[i] * phi)
+            else: important_bits += amplitude_list[i] * ofiber.LP_radial_field(V, b, el[i], r_over_a) * np.cos(el[i] * phi)        
         
         self.lp_amplitude = np.abs(important_bits)
         
@@ -856,10 +872,25 @@ class SLMSuperPixel(object):
         pixscale_x = self.wavelength/(self.x_dim * 10 * oversize) * u.rad
         pixscale_y = self.wavelength/(self.y_dim * 10 * oversize) * u.rad
         
-        self.focal_plane_image(self.fourier_encode, pixscale_x, pixscale_y, *args, set_intensity = set_intensity)
+        self.focal_plane_image(self.fourier_encode, pixscale_x, pixscale_y, *args, set_amplitude = set_amplitude)
         
     def focal_spot(self, central_spot_power, left_spot_power, right_spot_power, spacing, rotation):
+        """
+        A method to create 3 spots in the focal plane, with one central and 2 each side an equal distance away
         
+        Parameters
+        ----------
+        central_spot_power: float [0,1.0]
+            The amplitude of the central spot
+        left_spot_power: foat [0,1.0]
+            The amplitude of the left spot
+        right_spot_power: float [0,1.0]
+            The amplitude of the right spot
+        spacing: float
+            The distance between the central spot to the left and right spots
+        rotation: float, in degrees
+            The rotation of the spots from horizontal
+        """
         Y, X = np.mgrid[-self.pixels_y/2:self.pixels_y/2, -self.pixels_x/2:self.pixels_x/2]
         
         Xr = np.cos(rotation / 180 * np.pi) * X + np.sin(rotation / 180 * np.pi) * Y
@@ -876,6 +907,18 @@ class SLMSuperPixel(object):
         self.SLM_phase = np.angle(im_c)
     
     def focal_spots_multiple(self, spot_power, spacing, rotation):
+        """
+        A method to create multiple focal spots from the center.
+        
+        Parameters
+        ----------
+        spot_power: list of floats, [0, 1.0]
+            The amplitude of the spots to add
+        spacing:  list of floats
+            The distance of the spots from the "center" (assuming no tip/tilt term added)
+        rotation: list of floats, in degrees
+            The rotation of the spots from horizontal
+        """
         
         self.im_c = np.zeros((self.pixels_y, self.pixels_x), dtype = 'complex')
         

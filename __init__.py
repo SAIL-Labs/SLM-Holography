@@ -1,1 +1,2 @@
-from .SLM_super_pixel_holography import SLMDoublePixel
+from .SLM_double_pixel_holography import SLMDoublePixel
+
