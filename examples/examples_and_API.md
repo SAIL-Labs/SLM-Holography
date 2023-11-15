@@ -19,13 +19,38 @@ With an object created, the values of the amplitude and phase arrays can be set 
 This example applies a flat phase and amplitude to the SLM.
 This also shows and explains all of the variables when creating the class.
 
-#### [Example 2](2-gaussian_ampl.py)
+#### [Example 2](2-flat_resize_and_reshape.py)
 
-This example applies a gaussian to the amplitude only.
+This example applies a Gaussian to the amplitude only.
 
-#### [Example 3](3-focal_plane_patterns.py)
+#### [Example 3](3-gaussian_ampl.py)
+
+This example creates a Gaussian pattern and applies it to the center of the SLM
+
+#### [Example 4](4-custom_slm_pattern.py)
+
+This example creates a custom array (circular amplitude with a phase ramp from the center).
+
+#### [Example 5](5-zernike_terms.py)
+
+This example applies Zernike terms to the phase of the SLM array.
+
+#### [Example 6](6-focal_spots.py)
+
+This example creates multiple spots in the focal plane.
+
+#### [Example 7](7-checkerboard_phase.py)
+
+This example creates a checkerboard pattern in the phase of the SLM.
+
+#### [Example 8](8-focal_plane_patterns.py)
 
 This example creates a circular array and then requests it in the focal plane.  This array is requested with a certain pixel scale and total intensity.
+
+#### [Example 9](9-LP_modes.py)
+
+This example creates LP modes for a specific top hat multimode fiber.
+
 
 ## API Reference
 
